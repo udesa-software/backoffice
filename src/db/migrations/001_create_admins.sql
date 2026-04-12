@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS admins (
   id                       UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   email                    VARCHAR(255) NOT NULL,
   password_hash            VARCHAR(255) NOT NULL,
-  role_                     VARCHAR(20)  NOT NULL DEFAULT 'moderator', -- 'superadmin' | 'moderator'
+  role                     VARCHAR(20)  NOT NULL DEFAULT 'moderator', -- 'superadmin' | 'moderator'
   must_change_password     BOOLEAN      NOT NULL DEFAULT TRUE,
   temp_password_expires_at TIMESTAMPTZ,
   failed_login_attempts    INT          NOT NULL DEFAULT 0,
