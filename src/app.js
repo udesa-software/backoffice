@@ -13,8 +13,8 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'backoffice' });
 });
 
-app.use('/api/auth', authRouter);
-app.use('/api/admins', adminsRouter);
+app.use('/api/admin/auth', authRouter);
+app.use('/api/admin/admins', adminsRouter);
 
 app.use(errorHandler);
 

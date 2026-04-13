@@ -9,7 +9,7 @@ function getRefreshCookieOptions() {
     httpOnly: true,
     secure: true,
     sameSite: isProduction ? 'None' : 'Lax',
-    path: '/api/auth',
+    path: '/api/admin/auth',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   };
 }
