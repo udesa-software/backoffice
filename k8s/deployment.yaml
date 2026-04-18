@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backoffice
-  namespace: udesamigos
+  namespace: group-3
   labels:
     app: backoffice
 spec:
