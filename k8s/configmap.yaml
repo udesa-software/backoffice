@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backoffice-config
+  namespace: udesamigos
+data:
+  # Sobreescribimos el default (3001) para consistencia interna del cluster
+  PORT: "3000"
+  DB_PORT: "5432"
+
+  JWT_EXPIRES_IN: "8h"
+
+  # URL pública del backoffice para links en emails de admins.
+  # Como backoffice no tiene Ingress propio, apunta al mismo dominio del equipo.
+  APP_URL: "https://g1.tds-linar.udesa.edu.ar"
+
+  # Solo los emails de este dominio pueden ser admins
+  ALLOWED_EMAIL_DOMAIN: "udesa.edu.ar"
+
+  # Email del superadmin inicial (solo se usa si la tabla admins está vacía)
+  INITIAL_SUPERADMIN_EMAIL: "admin@udesa.edu.ar"
+
+  SMTP_PORT: "587"
+  SMTP_FROM: "backoffice@udesa.edu.ar"
