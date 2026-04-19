@@ -25,18 +25,18 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: backoffice
+        working-directory: .
 
       - name: Run unit tests with coverage
         run: npm run test:coverage
-        working-directory: backoffice
+        working-directory: .
 
       - name: Upload unit coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: udesa-software/backoffice
-          files: ./backoffice/coverage/lcov.info
+          files: ./coverage/lcov.info
           flags: unit
           fail_ci_if_error: true
 
@@ -83,11 +83,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: backoffice
+        working-directory: .
 
       - name: Run integration tests with coverage
         run: npm run test:integration:coverage
-        working-directory: backoffice
+        working-directory: .
         env:
           DB_HOST:              localhost
           DB_PORT:              5432
@@ -108,7 +108,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: udesa-software/backoffice
-          files: ./backoffice/coverage-integration/lcov.info
+          files: ./coverage-integration/lcov.info
           flags: integration
           fail_ci_if_error: true
 
