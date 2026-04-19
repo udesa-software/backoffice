@@ -141,7 +141,7 @@ beforeEach(async () => {
     users: [], total: 0, page: 1, limit: 20,
   });
   usersClient.getUser.mockResolvedValue({
-    id: 'user-uuid', username: 'testuser', email: 'user@test.com',
+    id: 'cccccccc-cccc-cccc-cccc-cccccccccccc', username: 'testuser', email: 'user@test.com',
     is_suspended: false, is_verified: true, deleted_at: null,
     created_at: new Date().toISOString(), last_login_at: null,
     failed_login_attempts: 0, locked_until: null,
@@ -650,11 +650,11 @@ describe('GET /api/admin/users/:id', () => {
     const token = makeAdminToken(SUPERADMIN);
 
     const res = await request(app)
-      .get('/api/admin/users/user-uuid')
+      .get('/api/admin/users/cccccccc-cccc-cccc-cccc-cccccccccccc')
       .set(bearer(token));
 
     expect(res.status).toBe(200);
-    expect(res.body.id).toBe('user-uuid');
+    expect(res.body.id).toBe('cccccccc-cccc-cccc-cccc-cccccccccccc');
   });
 
   it('propagga el error del users service (ej: 404)', async () => {
@@ -679,17 +679,17 @@ describe('POST /api/admin/users/:id/suspend', () => {
     const token = makeAdminToken(SUPERADMIN);
 
     const res = await request(app)
-      .post('/api/admin/users/user-uuid/suspend')
+      .post('/api/admin/users/cccccccc-cccc-cccc-cccc-cccccccccccc/suspend')
       .set(bearer(token))
       .send({ reason: 'Comportamiento inapropiado' });
 
     expect(res.status).toBe(200);
-    expect(usersClient.suspendUser).toHaveBeenCalledWith('user-uuid');
+    expect(usersClient.suspendUser).toHaveBeenCalledWith('cccccccc-cccc-cccc-cccc-cccccccccccc');
 
     // Verificar que la acción quedó registrada en moderation_actions
     const { rows } = await pool.query(
       'SELECT * FROM moderation_actions WHERE target_user_id = $1',
-      ['user-uuid']
+      ['cccccccc-cccc-cccc-cccc-cccccccccccc']
     );
     expect(rows).toHaveLength(1);
     expect(rows[0].action).toBe('suspend');
@@ -701,7 +701,7 @@ describe('POST /api/admin/users/:id/suspend', () => {
     const token = makeAdminToken(SUPERADMIN);
 
     const res = await request(app)
-      .post('/api/admin/users/user-uuid/suspend')
+      .post('/api/admin/users/cccccccc-cccc-cccc-cccc-cccccccccccc/suspend')
       .set(bearer(token))
       .send({});
 
@@ -714,7 +714,7 @@ describe('POST /api/admin/users/:id/suspend', () => {
     const token = makeAdminToken(SUPERADMIN);
 
     const res = await request(app)
-      .post('/api/admin/users/user-uuid/suspend')
+      .post('/api/admin/users/cccccccc-cccc-cccc-cccc-cccccccccccc/suspend')
       .set(bearer(token))
       .send({ reason: '   ' });
 
@@ -730,11 +730,11 @@ describe('POST /api/admin/users/:id/unsuspend', () => {
     const token = makeAdminToken(SUPERADMIN);
 
     const res = await request(app)
-      .post('/api/admin/users/user-uuid/unsuspend')
+      .post('/api/admin/users/cccccccc-cccc-cccc-cccc-cccccccccccc/unsuspend')
       .set(bearer(token));
 
     expect(res.status).toBe(200);
-    expect(usersClient.unsuspendUser).toHaveBeenCalledWith('user-uuid');
+    expect(usersClient.unsuspendUser).toHaveBeenCalledWith('cccccccc-cccc-cccc-cccc-cccccccccccc');
   });
 });
 
