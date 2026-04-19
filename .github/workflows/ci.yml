@@ -28,7 +28,7 @@ jobs:
         working-directory: .
 
       - name: Run unit tests with coverage
-        run: npx jest --coverage
+        run: node node_modules/jest/bin/jest.js --coverage
         working-directory: .
 
       - name: Upload unit coverage to Codecov
@@ -86,7 +86,7 @@ jobs:
         working-directory: .
 
       - name: Run integration tests with coverage
-        run: npx jest --config jest.integration.config.js --coverage
+        run: node node_modules/jest/bin/jest.js --config jest.integration.config.js --coverage
         working-directory: .
         env:
           DB_HOST:              localhost
