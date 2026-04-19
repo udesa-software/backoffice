@@ -33,6 +33,16 @@ const adminRepository = {
     return parseInt(result.rows[0].count, 10);
   },
 
+  async findAll() {
+    const result = await query(
+      `SELECT id, email, role, must_change_password, created_at, updated_at,
+              locked_until, failed_login_attempts
+       FROM admins
+       ORDER BY created_at ASC`
+    );
+    return result.rows;
+  },
+
   async incrementFailedAttempts(adminId, threshold) {
     await query(
       `UPDATE admins

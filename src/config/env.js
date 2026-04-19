@@ -9,13 +9,23 @@ const envSchema = z.object({
   DB_USER: z.string(),
   DB_PASSWORD: z.string(),
 
-  JWT_SECRET: z.string(),
   ADMIN_JWT_SECRET: z.string(),
   JWT_EXPIRES_IN: z.string().default('8h'),
   ACCESS_TOKEN_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
 
   APP_URL: z.string().url(),
+
+  // Secret compartido para comunicación interna entre microservicios
+  INTERNAL_SECRET: z.string(),
+
+  // URL del microservicio de users (para llamadas internas)
+  USERS_SERVICE_URL: z.string().url(),
+
+  // URLs de otros servicios para healthcheck (H11)
+  FRIENDS_SERVICE_URL: z.string().url().optional(),
+  LOCATION_SERVICE_URL: z.string().url().optional(),
+  API_GATEWAY_URL: z.string().url().optional(),
 
   // Dominio permitido para emails de admins (ej: "udesa.edu.ar")
   // Si está vacío, no se restringe el dominio

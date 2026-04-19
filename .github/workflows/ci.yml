@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+
+jobs:
+  # ── Tests unitarios (sin DB) ────────────────────────────────────────────────
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: backoffice
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+        working-directory: backoffice
+
+      - name: Upload unit coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: udesa-software/backoffice
+          files: ./backoffice/coverage/lcov.info
+          flags: unit
+          fail_ci_if_error: true
+
+      - name: Test summary
+        if: always()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await core.summary
+              .addHeading('Unit Test Results')
+              .addTable([
+                [{data: 'Step', header: true}, {data: 'Status', header: true}],
+                ['Unit tests (npm run test:coverage)', '${{ job.status }}']
+              ])
+              .write()
+
+  # ── Tests de integración (requiere PostgreSQL) ─────────────────────────────
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB:       backoffice_test
+          POSTGRES_USER:     postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: backoffice
+
+      - name: Run integration tests with coverage
+        run: npm run test:integration:coverage
+        working-directory: backoffice
+        env:
+          DB_HOST:              localhost
+          DB_PORT:              5432
+          DB_NAME:              backoffice_test
+          DB_USER:              postgres
+          DB_PASSWORD:          postgres
+          ADMIN_JWT_SECRET:     ${{ secrets.ADMIN_JWT_SECRET || 'ci-admin-jwt-secret-muy-largo-para-tests' }}
+          JWT_SECRET:           ${{ secrets.JWT_SECRET || 'ci-jwt-secret-muy-largo-para-tests' }}
+          ACCESS_TOKEN_EXPIRES_IN:  15m
+          REFRESH_TOKEN_EXPIRES_IN: 7d
+          APP_URL:              http://localhost:4000
+          INTERNAL_SECRET:      ci-internal-secret
+          USERS_SERVICE_URL:    http://localhost:3000
+          ALLOWED_EMAIL_DOMAIN: ''
+
+      - name: Upload integration coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: udesa-software/backoffice
+          files: ./backoffice/coverage-integration/lcov.info
+          flags: integration
+          fail_ci_if_error: true
+
+      - name: Test summary
+        if: always()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await core.summary
+              .addHeading('Integration Test Results')
+              .addTable([
+                [{data: 'Step', header: true}, {data: 'Status', header: true}],
+                ['Integration tests (npm run test:integration:coverage)', '${{ job.status }}']
+              ])
+              .write()

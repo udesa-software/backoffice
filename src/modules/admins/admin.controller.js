@@ -1,6 +1,17 @@
 const { adminService } = require('./admin.service');
+const { adminRepository } = require('./admin.repository');
 
 const adminController = {
+  // H1: listar todos los admins (para el panel de gestión)
+  async list(req, res, next) {
+    try {
+      const admins = await adminRepository.findAll();
+      res.json({ admins });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async create(req, res, next) {
     try {
       const admin = await adminService.createAdmin(req.body, req.admin.sub);
