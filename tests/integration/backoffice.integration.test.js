@@ -457,7 +457,7 @@ describe('GET /api/admin/admins', () => {
     expect(res.status).toBe(401);
   });
 
-  it('403: moderador no puede listar admins (solo superadmin)', async () => {
+  it('200: moderador puede listar admins', async () => {
     await insertAdmin(MODERADOR);
     const token = makeAdminToken(MODERADOR);
 
@@ -465,7 +465,8 @@ describe('GET /api/admin/admins', () => {
       .get('/api/admin/admins')
       .set(bearer(token));
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(res.body.admins).toBeDefined();
   });
 
   it('403: admin con must_change_password=true no puede acceder', async () => {

@@ -11,11 +11,17 @@ const adminRepository = {
   },
 
   async findById(id) {
-    const result = await query(
-      'SELECT * FROM admins WHERE id = $1',
-      [id]
-    );
-    return result.rows[0] ?? null;
+    try {
+      const result = await query(
+        'SELECT * FROM admins WHERE id = $1',
+        [id]
+      );
+      return result.rows[0] ?? null;
+    } catch (err) {
+      // UUID inválido → PostgreSQL lanza "invalid input syntax for type uuid"
+      if (err.code === '22P02') return null;
+      throw err;
+    }
   },
 
   async create({ email, passwordHash, role, tempPasswordExpiresAt, createdBy }) {
