@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backoffice-config
+  namespace: group-3
+data:
+  PORT: "3000"
+  DB_PORT: "5432"
+  JWT_EXPIRES_IN: "8h"
+  APP_URL: "https://g3.tds-linar.udesa.edu.ar"
+  ALLOWED_EMAIL_DOMAIN: "udesa.edu.ar"
+  INITIAL_SUPERADMIN_EMAIL: "admin@udesa.edu.ar"
+  SMTP_PORT: "587"
+  SMTP_FROM: "backoffice@udesa.edu.ar"
