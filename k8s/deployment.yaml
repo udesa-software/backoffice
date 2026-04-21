@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backoffice
-  namespace: group-3
+  namespace: tds-group-3
   labels:
     app: backoffice
 spec:
@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: backoffice
-          image: <ECR_URI>/udesamigos/backoffice:latest
+          image: 172786533418.dkr.ecr.us-east-2.amazonaws.com/tds-group-3/backoffice:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
