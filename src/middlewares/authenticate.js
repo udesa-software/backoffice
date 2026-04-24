@@ -14,7 +14,11 @@ async function authenticate(req, _res, next) {
   }
 
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET);
+    const payload = jwt.verify(token, env.ADMIN_JWT_SECRET);
+
+    if (!payload.role) {
+      return next(new AppError(403, 'Acceso denegado'));
+    }
 
     // Verifica que la sesión no haya sido revocada (logout o cambio de contraseña)
     const admin = await adminRepository.findById(payload.sub);

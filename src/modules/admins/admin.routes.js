@@ -8,13 +8,15 @@ const { createAdminSchema } = require('./admin.schemas');
 const router = Router();
 
 // Todas las rutas de admins requieren: estar logueado + haber cambiado la contraseña
-// + ser SuperAdmin (CA.2: los Moderadores no pueden crear admins)
-router.use(authenticate, requirePasswordChanged, authorize('superadmin'));
+router.use(authenticate, requirePasswordChanged);
 
-// POST /api/admins — H1: crear nuevo administrador
-router.post('/', validate(createAdminSchema), adminController.create);
+// GET /api/admins — H1: listar administradores (cualquier admin puede ver)
+router.get('/', adminController.list);
 
-// POST /api/admins/:id/reset-password — H1 CA.3: regenerar contraseña temporal expirada
-router.post('/:id/reset-password', adminController.resetPassword);
+// POST /api/admins — H1: crear nuevo administrador (solo superadmin, CA.2)
+router.post('/', authorize('superadmin'), validate(createAdminSchema), adminController.create);
+
+// POST /api/admins/:id/reset-password — H1 CA.3: regenerar contraseña temporal expirada (solo superadmin)
+router.post('/:id/reset-password', authorize('superadmin'), adminController.resetPassword);
 
 module.exports = router;

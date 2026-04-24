@@ -50,4 +50,4 @@ async function sendPasswordChangedEmail(email) {
   });
 }
 
-module.exports = { sendTempPasswordEmail, sendPasswordChangedEmail };
+module.exports = { sendMail, sendTempPasswordEmail, sendPasswordChangedEmail };

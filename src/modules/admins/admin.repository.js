@@ -1,4 +1,5 @@
-const { query } = require('../../config/database');
+const { query, withTransaction } = require('../../config/database');
+const { hashToken } = require('../../utils/tokenHash');
 
 const adminRepository = {
   async findByEmail(email) {
@@ -10,11 +11,17 @@ const adminRepository = {
   },
 
   async findById(id) {
-    const result = await query(
-      'SELECT * FROM admins WHERE id = $1',
-      [id]
-    );
-    return result.rows[0] ?? null;
+    try {
+      const result = await query(
+        'SELECT * FROM admins WHERE id = $1',
+        [id]
+      );
+      return result.rows[0] ?? null;
+    } catch (err) {
+      // UUID inválido → PostgreSQL lanza "invalid input syntax for type uuid"
+      if (err.code === '22P02') return null;
+      throw err;
+    }
   },
 
   async create({ email, passwordHash, role, tempPasswordExpiresAt, createdBy }) {
@@ -30,6 +37,16 @@ const adminRepository = {
   async countAll() {
     const result = await query('SELECT COUNT(*) FROM admins');
     return parseInt(result.rows[0].count, 10);
+  },
+
+  async findAll() {
+    const result = await query(
+      `SELECT id, email, role, must_change_password, created_at, updated_at,
+              locked_until, failed_login_attempts
+       FROM admins
+       ORDER BY created_at ASC`
+    );
+    return result.rows;
   },
 
   async incrementFailedAttempts(adminId, threshold) {
@@ -73,6 +90,43 @@ const adminRepository = {
        WHERE id = $2`,
       [passwordHash, adminId]
     );
+  },
+
+  async createRefreshToken(adminId, token, expiresAt) {
+    await query(
+      `INSERT INTO admin_refresh_tokens (admin_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
+      [adminId, hashToken(token), expiresAt]
+    );
+  },
+
+  async rotateRefreshToken(oldToken, newToken, expiresAt) {
+    const oldHash = hashToken(oldToken);
+    const newHash = hashToken(newToken);
+
+    return withTransaction(async (client) => {
+      const { rows } = await client.query(
+        `DELETE FROM admin_refresh_tokens WHERE token_hash = $1 AND expires_at > NOW() RETURNING admin_id`,
+        [oldHash]
+      );
+
+      if (rows.length === 0) return null;
+
+      const { admin_id } = rows[0];
+      await client.query(
+        `INSERT INTO admin_refresh_tokens (admin_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
+        [admin_id, newHash, expiresAt]
+      );
+
+      return admin_id;
+    });
+  },
+
+  async deleteRefreshToken(token) {
+    await query(`DELETE FROM admin_refresh_tokens WHERE token_hash = $1`, [hashToken(token)]);
+  },
+
+  async deleteAllRefreshTokensForAdmin(adminId) {
+    await query(`DELETE FROM admin_refresh_tokens WHERE admin_id = $1`, [adminId]);
   },
 
   async updateTempPassword(adminId, passwordHash, expiresAt) {
