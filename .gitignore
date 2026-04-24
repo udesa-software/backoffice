@@ -1,3 +1,6 @@
 node_modules/
-.env
 *.log
+dist/
+.env
+coverage/
+k8s/secret.yaml
