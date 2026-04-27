@@ -47,11 +47,11 @@ spec:
                 secretKeyRef:
                   name: backoffice-secret
                   key: DB_PASSWORD
-            - name: JWT_SECRET
+            - name: ADMIN_JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: backoffice-secret
-                  key: JWT_SECRET
+                  key: ADMIN_JWT_SECRET
             - name: SMTP_HOST
               valueFrom:
                 secretKeyRef:

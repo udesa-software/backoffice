@@ -13,6 +13,5 @@ process.env.JWT_SECRET                = 'test-jwt-secret-muy-largo';
 process.env.ACCESS_TOKEN_EXPIRES_IN   = '15m';
 process.env.REFRESH_TOKEN_EXPIRES_IN  = '7d';
 process.env.APP_URL                   = 'http://localhost:4000';
-process.env.INTERNAL_SECRET           = 'test-internal-secret';
 process.env.USERS_SERVICE_URL         = 'http://localhost:3000';
 process.env.ALLOWED_EMAIL_DOMAIN      = '';  // sin restricción de dominio por defecto
