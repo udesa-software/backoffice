@@ -12,3 +12,7 @@ data:
   INITIAL_SUPERADMIN_EMAIL: "admin@udesa.edu.ar"
   SMTP_PORT: "587"
   SMTP_FROM: "backoffice@udesa.edu.ar"
+  USERS_SERVICE_URL: "http://users:3000"
+  FRIENDS_SERVICE_URL: "http://friends:3000"
+  LOCATION_SERVICE_URL: "http://location:3000"
+  API_GATEWAY_URL: "http://api-gateway:4000"

@@ -16,9 +16,6 @@ const envSchema = z.object({
 
   APP_URL: z.string().url(),
 
-  // Secret compartido para comunicación interna entre microservicios
-  INTERNAL_SECRET: z.string(),
-
   // URL del microservicio de users (para llamadas internas)
   USERS_SERVICE_URL: z.string().url(),
 
