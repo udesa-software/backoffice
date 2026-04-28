@@ -37,16 +37,15 @@ jobs:
           aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
       - name: Render Secret from template
         env:
-          BACKOFFICE_DB_HOST: ${{ secrets.DB_HOST }}
-          BACKOFFICE_DB_NAME: ${{ secrets.BACKOFFICE_DB_NAME }}
-          BACKOFFICE_DB_USER: ${{ secrets.BACKOFFICE_DB_USER }}
-          BACKOFFICE_DB_PASSWORD: ${{ secrets.BACKOFFICE_DB_PASSWORD }}
-          BACKOFFICE_DB_PORT: ${{ secrets.BACKOFFICE_DB_PORT }}
+          DB_HOST: ${{ secrets.BACKOFFICE_DB_HOST }}
+          DB_NAME: ${{ secrets.BACKOFFICE_DB_NAME }}
+          DB_USER: ${{ secrets.BACKOFFICE_DB_USER }}
+          DB_PASSWORD: ${{ secrets.BACKOFFICE_DB_PASSWORD }}
           ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          BACKOFFICE_SUPERADMIN_TEMP_PASSWORD: ${{ secrets.BACKOFFICE_SUPERADMIN_TEMP_PASSWORD }}
+          INITIAL_SUPERADMIN_TEMP_PASSWORD: ${{ secrets.BACKOFFICE_SUPERADMIN_TEMP_PASSWORD }}
 
         run: |
           envsubst < k8s/secret.template.yaml > k8s/secret.yaml
