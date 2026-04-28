@@ -7,6 +7,7 @@ const pool = new Pool({
   database: env.DB_NAME,
   user: env.DB_USER,
   password: env.DB_PASSWORD,
+  ssl: env.DB_HOST.includes('supabase.co') ? { rejectUnauthorized: false } : false,
 });
 
 async function query(text, params) {
