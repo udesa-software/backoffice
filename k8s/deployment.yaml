@@ -57,6 +57,11 @@ spec:
                 secretKeyRef:
                   name: backoffice-secret
                   key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: backoffice-secret
+                  key: SMTP_PORT
             - name: SMTP_USER
               valueFrom:
                 secretKeyRef:
@@ -67,6 +72,11 @@ spec:
                 secretKeyRef:
                   name: backoffice-secret
                   key: SMTP_PASS
+            - name: SMTP_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: backoffice-secret
+                  key: SMTP_FROM
             - name: INITIAL_SUPERADMIN_TEMP_PASSWORD
               valueFrom:
                 secretKeyRef:
