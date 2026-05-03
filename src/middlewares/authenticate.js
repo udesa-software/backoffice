@@ -10,6 +10,7 @@ async function authenticate(req, _res, next) {
     : null;
 
   if (!token) {
+    console.error('[Auth Error] Token de autenticación requerido');
     return next(new AppError(401, 'Token de autenticación requerido'));
   }
 
@@ -17,18 +18,21 @@ async function authenticate(req, _res, next) {
     const payload = jwt.verify(token, env.ADMIN_JWT_SECRET);
 
     if (!payload.role) {
+      console.error('[Auth Error] Acceso denegado (sin rol)');
       return next(new AppError(403, 'Acceso denegado'));
     }
 
     // Verifica que la sesión no haya sido revocada (logout o cambio de contraseña)
     const admin = await adminRepository.findById(payload.sub);
     if (!admin || admin.token_version !== payload.token_version) {
+      console.error('[Auth Error] Sesión expirada o revocada (token version mismatch)');
       return next(new AppError(401, 'Sesión expirada o revocada. Iniciá sesión de nuevo.'));
     }
 
     req.admin = payload; // { sub, email, role, token_version, must_change_password }
     next();
-  } catch {
+  } catch (err) {
+    console.error('[Auth Error] Token inválido o expirado:', err.message);
     next(new AppError(401, 'Token inválido o expirado'));
   }
 }

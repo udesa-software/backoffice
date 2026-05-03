@@ -8,6 +8,7 @@ class AppError extends Error {
 
 function errorHandler(err, _req, res, _next) {
   if (err instanceof AppError) {
+    console.log(`[AppError] ${err.statusCode}: ${err.message}`);
     res.status(err.statusCode).json({ error: err.message });
     return;
   }
