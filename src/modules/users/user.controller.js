@@ -63,6 +63,24 @@ const userController = {
       next(err);
     }
   },
+
+  // H9: resolver revisión automática (admin decide si la cuenta puede operar normalmente)
+  async resolveReview(req, res, next) {
+    try {
+      const { reason } = req.body;
+
+      await query(
+        `INSERT INTO moderation_actions (admin_id, target_user_id, action, reason)
+         VALUES ($1, $2, 'resolve_review', $3)`,
+        [req.admin.sub, req.params.id, reason?.trim() ?? null]
+      );
+
+      const result = await usersClient.resolveUserReview(req.params.id);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
 };
 
 module.exports = { userController };

@@ -16,4 +16,7 @@ router.get('/:id', userController.detail);
 router.post('/:id/suspend', userController.suspend);
 router.post('/:id/unsuspend', userController.unsuspend);
 
+// H9: resolver revisión automática generada por reportes
+router.post('/:id/resolve-review', userController.resolveReview);
+
 module.exports = router;

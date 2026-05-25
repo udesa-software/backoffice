@@ -57,6 +57,11 @@ const usersClient = {
     return internalRequest('POST', `/internal/users/${userId}/unsuspend`);
   },
 
+  // H9: resolver revisión automática iniciada por reportes de usuarios
+  resolveUserReview(userId) {
+    return internalRequest('POST', `/internal/users/${userId}/resolve-review`);
+  },
+
   // H3
   getMetrics() {
     return internalRequest('GET', '/internal/metrics');
