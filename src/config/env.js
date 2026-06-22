@@ -19,6 +19,10 @@ const envSchema = z.object({
   // URL del microservicio de users (para llamadas internas)
   USERS_SERVICE_URL: z.string().url(),
 
+  // H9: secreto compartido para validar llamadas internas entrantes (ej. friends -> backoffice)
+  // y para autenticar las llamadas salientes de backoffice hacia users.
+  INTERNAL_SECRET: z.string().optional(),
+
   // URLs de otros servicios para healthcheck (H11)
   FRIENDS_SERVICE_URL: z.string().url().optional(),
   LOCATION_SERVICE_URL: z.string().url().optional(),

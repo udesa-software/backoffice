@@ -14,6 +14,7 @@ async function internalRequest(method, path, body = null) {
       method,
       headers: {
         'Content-Type': 'application/json',
+        'x-internal-secret': env.INTERNAL_SECRET,
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
@@ -55,6 +56,11 @@ const usersClient = {
 
   unsuspendUser(userId) {
     return internalRequest('POST', `/internal/users/${userId}/unsuspend`);
+  },
+
+  // H9: resolver revisión automática iniciada por reportes de usuarios
+  resolveUserReview(userId) {
+    return internalRequest('POST', `/internal/users/${userId}/resolve-review`);
   },
 
   // H3
