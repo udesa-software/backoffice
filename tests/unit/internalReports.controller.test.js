@@ -29,7 +29,7 @@ describe('internalReportsController.receiveReport', () => {
     jest.clearAllMocks();
   });
 
-  it('inserta la denuncia en user_reports', async () => {
+  it('inserta la denuncia en user_reports con reason_detail null cuando no viene en el body', async () => {
     const res = makeRes();
     await internalReportsController.receiveReport(makeReq(VALID_BODY), res, makeNext());
 
@@ -41,11 +41,32 @@ describe('internalReportsController.receiveReport', () => {
         VALID_BODY.reportedId,
         VALID_BODY.reportedUsername,
         VALID_BODY.reason,
+        null,
         VALID_BODY.createdAt,
       ]
     );
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({ message: 'Denuncia registrada' });
+  });
+
+  // H9: motivo "Otro" — el texto libre viaja en reasonDetail
+  it('inserta el reasonDetail en user_reports cuando viene en el body', async () => {
+    const res = makeRes();
+    const bodyWithDetail = { ...VALID_BODY, reason: 'other', reasonDetail: 'Me acosó por DM' };
+    await internalReportsController.receiveReport(makeReq(bodyWithDetail), res, makeNext());
+
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO user_reports'),
+      [
+        VALID_BODY.reporterId,
+        VALID_BODY.reporterUsername,
+        VALID_BODY.reportedId,
+        VALID_BODY.reportedUsername,
+        'other',
+        'Me acosó por DM',
+        VALID_BODY.createdAt,
+      ]
+    );
   });
 
   it('llama a next con 400 si falta reporterId', async () => {
