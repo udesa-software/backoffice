@@ -1,6 +1,8 @@
+const path = require('path');
+
 module.exports = {
-  testMatch: ['<rootDir>/tests/integration/**/*.integration.test.js'],
-  setupFiles: ['<rootDir>/tests/setupEnv.js'],
+  rootDir: __dirname,
+  testMatch: [path.join(__dirname, 'tests/integration/**/*.integration.test.js')],
   testTimeout: 20000,
   maxWorkers: 1,    // evita condiciones de carrera sobre la misma DB de test
   forceExit: true,  // pg mantiene handles abiertos — forzar salida al terminar
