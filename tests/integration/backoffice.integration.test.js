@@ -1,5 +1,7 @@
 'use strict';
 
+require('../setupEnv');
+
 // ─── Mocks (hoisted) ─────────────────────────────────────────────────────────
 // Reemplazamos el cliente del servicio de users y el mailer porque en CI
 // esos servicios externos no están corriendo.
