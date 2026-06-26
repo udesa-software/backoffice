@@ -13,6 +13,9 @@ function getServices() {
   if (env.FRIENDS_SERVICE_URL) services.push({ name: 'friends', url: env.FRIENDS_SERVICE_URL });
   if (env.LOCATION_SERVICE_URL) services.push({ name: 'location', url: env.LOCATION_SERVICE_URL });
   if (env.API_GATEWAY_URL) services.push({ name: 'api-gateway', url: env.API_GATEWAY_URL });
+  if (env.BACKOFFICE_SERVICE_URL) services.push({ name: 'backoffice', url: env.BACKOFFICE_SERVICE_URL });
+  if (env.NOTIFICATIONS_SERVICE_URL) services.push({ name: 'notifications', url: env.NOTIFICATIONS_SERVICE_URL });
+  if (env.AI_SERVICE_URL) services.push({ name: 'ai-service', url: env.AI_SERVICE_URL });
   return services;
 }
 

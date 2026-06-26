@@ -16,3 +16,6 @@ data:
   FRIENDS_SERVICE_URL: "http://friends:3000"
   LOCATION_SERVICE_URL: "http://location:3000"
   API_GATEWAY_URL: "http://api-gateway:4000"
+  BACKOFFICE_SERVICE_URL: "http://backoffice:3000"
+  NOTIFICATIONS_SERVICE_URL: "http://notifications:8080"
+  AI_SERVICE_URL: "http://ai-service:8001"
