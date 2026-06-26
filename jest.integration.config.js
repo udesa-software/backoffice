@@ -23,5 +23,8 @@ module.exports = {
     'src/modules/health/health.controller.js',
     'src/middlewares/authenticate.js',
     'src/middlewares/authorize.js',
+    'src/modules/reports/reports.routes.js',
+    'src/modules/reports/reports.controller.js',
+    'src/modules/reports/reports.repository.js',
   ],
 };
