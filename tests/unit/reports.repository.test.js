@@ -91,14 +91,9 @@ describe('reportsRepository.countReportGroups', () => {
 
     await reportsRepository.countReportGroups();
 
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('COUNT(DISTINCT reported_id)'),
-      expect.any(Array)
-    );
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining("status = 'pending'"),
-      expect.any(Array)
-    );
+    const [sql] = query.mock.calls[0];
+    expect(sql).toContain('COUNT(DISTINCT reported_id)');
+    expect(sql).toContain("status = 'pending'");
   });
 
   it('devuelve el total como número entero', async () => {

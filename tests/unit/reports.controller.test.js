@@ -135,11 +135,13 @@ describe('reportsController.discard', () => {
     expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
-  it('llama a next si resolveUserReview falla', async () => {
+  it('no propaga el error de resolveUserReview a next (fire-and-forget)', async () => {
     usersClient.resolveUserReview.mockRejectedValue(new AppError(502, 'users service down'));
     const next = makeNext();
-    await reportsController.discard(makeReq(), makeRes(), next);
-    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 502 }));
+    const res = makeRes();
+    await reportsController.discard(makeReq(), res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
   });
 });
 
@@ -247,10 +249,12 @@ describe('reportsController.resolve', () => {
     expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
-  it('llama a next si resolveUserReview falla', async () => {
+  it('no propaga el error de resolveUserReview a next (fire-and-forget)', async () => {
     usersClient.resolveUserReview.mockRejectedValue(new AppError(504, 'Timeout'));
     const next = makeNext();
-    await reportsController.resolve(makeReq(), makeRes(), next);
-    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 504 }));
+    const res = makeRes();
+    await reportsController.resolve(makeReq(), res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
   });
 });
