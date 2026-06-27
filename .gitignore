@@ -4,3 +4,4 @@ dist/
 .env
 coverage/
 k8s/secret.yaml
+coverage-integration/
