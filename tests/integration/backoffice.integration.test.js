@@ -811,6 +811,9 @@ describe('GET /api/admin/services/health', () => {
     // En CI los servicios no están corriendo → todos reportan isUp: false, pero la respuesta es 200
     const names = res.body.services.map(s => s.name);
     expect(names).toContain('users');
+    expect(names).toContain('backoffice');
+    expect(names).toContain('notifications');
+    expect(names).toContain('ai-service');
   });
 
   it('persiste el estado de los servicios en service_health_status', async () => {

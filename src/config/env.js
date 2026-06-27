@@ -27,6 +27,9 @@ const envSchema = z.object({
   FRIENDS_SERVICE_URL: z.string().url(),
   LOCATION_SERVICE_URL: z.string().url().optional(),
   API_GATEWAY_URL: z.string().url().optional(),
+  BACKOFFICE_SERVICE_URL: z.string().url().optional(),
+  NOTIFICATIONS_SERVICE_URL: z.string().url().optional(),
+  AI_SERVICE_URL: z.string().url().optional(),
 
   // Dominio permitido para emails de admins (ej: "udesa.edu.ar")
   // Si está vacío, no se restringe el dominio
