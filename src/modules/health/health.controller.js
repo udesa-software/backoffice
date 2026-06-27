@@ -1,6 +1,5 @@
 const { env } = require('../../config/env');
 const { query } = require('../../config/database');
-const { adminRepository } = require('../admins/admin.repository');
 const { sendMail } = require('../../config/mailer');
 
 const HEALTH_TIMEOUT_MS = 5000; // H11 CA.3: abortar si tarda más de 5 segundos
@@ -13,7 +12,7 @@ function getServices() {
   if (env.FRIENDS_SERVICE_URL) services.push({ name: 'friends', url: env.FRIENDS_SERVICE_URL });
   if (env.LOCATION_SERVICE_URL) services.push({ name: 'location', url: env.LOCATION_SERVICE_URL });
   if (env.API_GATEWAY_URL) services.push({ name: 'api-gateway', url: env.API_GATEWAY_URL });
-  if (env.BACKOFFICE_SERVICE_URL) services.push({ name: 'backoffice', url: env.BACKOFFICE_SERVICE_URL });
+  services.push({ name: 'backoffice', url: `http://127.0.0.1:${env.PORT}` });
   if (env.NOTIFICATIONS_SERVICE_URL) services.push({ name: 'notifications', url: env.NOTIFICATIONS_SERVICE_URL });
   if (env.AI_SERVICE_URL) services.push({ name: 'ai-service', url: env.AI_SERVICE_URL });
   return services;
@@ -40,7 +39,7 @@ async function checkService({ name, url }) {
 // Envía email a todos los admins cuando un servicio cae (H11 CA.4)
 async function alertAdmins(serviceName) {
   try {
-    const adminsResult = await query('SELECT email FROM admins WHERE deleted_at IS NULL');
+    const adminsResult = await query('SELECT email FROM admins');
     const emails = adminsResult.rows.map(r => r.email);
     if (emails.length === 0) return;
 
