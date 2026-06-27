@@ -1,12 +1,15 @@
 const { Router } = require('express');
 const { authenticate } = require('../../middlewares/authenticate');
-const { requirePasswordChanged } = require('../../middlewares/authorize');
+const { requirePasswordChanged, authorize } = require('../../middlewares/authorize');
 const { userController } = require('./user.controller');
 
 const router = Router();
 
 // Todas las rutas de usuarios requieren estar logueado con contraseña ya cambiada
 router.use(authenticate, requirePasswordChanged);
+
+// H8: exportar CSV — CA.2: solo superadmin. Antes de /:id para que Express no confunda "export" con un userId.
+router.get('/export', authorize('superadmin'), userController.exportCsv);
 
 // H4: búsqueda y detalle de usuarios
 router.get('/', userController.list);

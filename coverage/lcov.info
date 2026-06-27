@@ -1,5 +1,5 @@
 TN:
-SF:src\modules\admins\admin.service.js
+SF:src/modules/admins/admin.service.js
 FN:10,tempPasswordExpiresAt
 FN:17,generateTempPassword
 FN:23,(anonymous_2)
@@ -68,7 +68,7 @@ BRF:10
 BRH:10
 end_of_record
 TN:
-SF:src\modules\auth\auth.service.js
+SF:src/modules/auth/auth.service.js
 FN:15,(anonymous_0)
 FN:74,(anonymous_1)
 FN:105,(anonymous_2)

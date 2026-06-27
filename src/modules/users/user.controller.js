@@ -3,6 +3,33 @@ const { AppError } = require('../../middlewares/errorHandler');
 const { query } = require('../../config/database');
 
 const userController = {
+  // H8 CA.1: genera y descarga CSV con columnas requeridas (CA.2: superadmin verificado en la ruta)
+  async exportCsv(req, res, next) {
+    try {
+      const { search = '' } = req.query;
+      const { users } = await usersClient.exportUsers({ search });
+
+      const toStatus = (u) => {
+        if (u.deleted_at)   return 'Eliminado';
+        if (u.is_suspended) return 'Suspendido';
+        if (u.under_review) return 'En revision';
+        if (!u.is_verified) return 'Sin verificar';
+        return 'Activo';
+      };
+
+      const rows = users.map(u =>
+        [u.id, u.username, u.email, toStatus(u), u.created_at].join(',')
+      );
+      const csv = ['ID,Username,Email,Estado,Fecha de Registro', ...rows].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="usuarios.csv"');
+      res.send(csv);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // H4: listado con búsqueda y paginación
   async list(req, res, next) {
     try {
