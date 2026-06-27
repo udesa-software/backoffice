@@ -270,14 +270,6 @@ describe('reportsController.discardReport', () => {
     expect(friendsClient.discardReport).toHaveBeenCalledWith(REPORT_ID);
   });
 
-  it('registra la acción "discard_report" en moderation_actions', async () => {
-    await reportsController.discardReport(makeReq(), makeRes(), makeNext());
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('discard_report'),
-      [ADMIN_ID, REPORT_ID]
-    );
-  });
-
   it('no llama a usersClient.resolveUserReview', async () => {
     await reportsController.discardReport(makeReq(), makeRes(), makeNext());
     expect(usersClient.resolveUserReview).not.toHaveBeenCalled();

@@ -70,15 +70,7 @@ const reportsController = {
   async discardReport(req, res, next) {
     try {
       const { reportId } = req.params;
-
       await friendsClient.discardReport(reportId);
-
-      await query(
-        `INSERT INTO moderation_actions (admin_id, target_user_id, action, reason)
-         VALUES ($1, $2, 'discard_report', NULL)`,
-        [req.admin.sub, reportId]
-      );
-
       res.json({ message: 'Denuncia descartada.' });
     } catch (err) {
       next(err);

@@ -1082,21 +1082,6 @@ describe('POST /api/admin/reports/report/:reportId/discard', () => {
     expect(usersClient.resolveUserReview).not.toHaveBeenCalled();
   });
 
-  it('200: registra la acción "discard_report" en moderation_actions', async () => {
-    await insertAdmin(SUPERADMIN);
-    const token = makeAdminToken(SUPERADMIN);
-    friendsClient.discardReport.mockResolvedValue({ message: 'Denuncia descartada.' });
-
-    await request(app)
-      .post(`/api/admin/reports/report/${REPORT_ID}/discard`)
-      .set(bearer(token));
-
-    const { rows } = await pool.query(
-      "SELECT action FROM moderation_actions WHERE action = 'discard_report'"
-    );
-    expect(rows[0].action).toBe('discard_report');
-  });
-
   it('401: sin access token', async () => {
     const res = await request(app).post(`/api/admin/reports/report/${REPORT_ID}/discard`);
     expect(res.status).toBe(401);
