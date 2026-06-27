@@ -48,6 +48,9 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           INITIAL_SUPERADMIN_TEMP_PASSWORD: ${{ secrets.BACKOFFICE_SUPERADMIN_TEMP_PASSWORD }}
+          LOKI_URL: ${{ secrets.LOKI_URL }}
+          LOKI_USER: ${{ secrets.LOKI_USER }}
+          LOKI_TOKEN: ${{ secrets.LOKI_TOKEN }}
 
         run: |
           envsubst < k8s/secret.template.yaml > k8s/secret.yaml
