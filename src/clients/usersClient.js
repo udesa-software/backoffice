@@ -63,6 +63,12 @@ const usersClient = {
     return internalRequest('POST', `/internal/users/${userId}/resolve-review`);
   },
 
+  // H8: trae todos los usuarios sin límite para exportación CSV
+  exportUsers({ search }) {
+    const params = new URLSearchParams({ search: search ?? '' });
+    return internalRequest('GET', `/internal/users/export?${params}`);
+  },
+
   // H3
   getMetrics() {
     return internalRequest('GET', '/internal/metrics');

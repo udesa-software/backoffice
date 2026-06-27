@@ -35,4 +35,39 @@ describe('usersClient internal requests', () => {
       })
     );
   });
+
+  // H8: exportar usuarios para CSV
+  it('exportUsers llama a /internal/users/export con el search como query param', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: jest.fn().mockResolvedValue({ users: [] }),
+    });
+    await usersClient.exportUsers({ search: 'juan' });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://users:3000/internal/users/export?search=juan',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('exportUsers usa search vacío si no se pasa', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: jest.fn().mockResolvedValue({ users: [] }),
+    });
+    await usersClient.exportUsers({ search: undefined });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://users:3000/internal/users/export?search=',
+      expect.anything()
+    );
+  });
+
+  it('exportUsers devuelve los datos del json de respuesta', async () => {
+    const mockData = { users: [{ id: 'u1', username: 'alice' }] };
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockData),
+    });
+    const result = await usersClient.exportUsers({ search: '' });
+    expect(result).toEqual(mockData);
+  });
 });
