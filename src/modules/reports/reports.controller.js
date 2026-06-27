@@ -1,4 +1,4 @@
-const { reportsRepository } = require('./reports.repository');
+const { friendsClient } = require('../../clients/friendsClient');
 const { usersClient } = require('../../clients/usersClient');
 const { AppError } = require('../../middlewares/errorHandler');
 const { query } = require('../../config/database');
@@ -10,12 +10,8 @@ const reportsController = {
       const page  = Math.max(1, parseInt(req.query.page  ?? '1',  10));
       const limit = Math.max(1, parseInt(req.query.limit ?? '20', 10));
 
-      const [groups, total] = await Promise.all([
-        reportsRepository.listReportGroups({ page, limit }),
-        reportsRepository.countReportGroups(),
-      ]);
-
-      res.json({ groups, total, page, limit });
+      const data = await friendsClient.getReports({ page, limit });
+      res.json(data);
     } catch (err) {
       next(err);
     }
@@ -26,7 +22,7 @@ const reportsController = {
     try {
       const { reportedId } = req.params;
 
-      await reportsRepository.markReportsStatus(reportedId, 'discarded');
+      await friendsClient.markReportsDiscarded(reportedId);
 
       await query(
         `INSERT INTO moderation_actions (admin_id, target_user_id, action, reason)
@@ -63,7 +59,7 @@ const reportsController = {
       );
 
       await usersClient.suspendUser(reportedId);
-      await reportsRepository.markReportsStatus(reportedId, 'resolved');
+      await friendsClient.markReportsResolved(reportedId);
 
       res.json({ message: 'Usuario suspendido y caso resuelto.' });
     } catch (err) {
@@ -76,7 +72,7 @@ const reportsController = {
     try {
       const { reportedId } = req.params;
 
-      await reportsRepository.markReportsStatus(reportedId, 'resolved');
+      await friendsClient.markReportsResolved(reportedId);
 
       await query(
         `INSERT INTO moderation_actions (admin_id, target_user_id, action, reason)

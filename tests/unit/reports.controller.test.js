@@ -1,14 +1,14 @@
 const { reportsController } = require('../../src/modules/reports/reports.controller');
-const { reportsRepository } = require('../../src/modules/reports/reports.repository');
+const { friendsClient } = require('../../src/clients/friendsClient');
 const { usersClient } = require('../../src/clients/usersClient');
 const { AppError } = require('../../src/middlewares/errorHandler');
 const { query } = require('../../src/config/database');
 
-jest.mock('../../src/modules/reports/reports.repository', () => ({
-  reportsRepository: {
-    listReportGroups:  jest.fn(),
-    countReportGroups: jest.fn(),
-    markReportsStatus: jest.fn(),
+jest.mock('../../src/clients/friendsClient', () => ({
+  friendsClient: {
+    getReports:          jest.fn(),
+    markReportsDiscarded: jest.fn(),
+    markReportsResolved:  jest.fn(),
   },
 }));
 
@@ -26,15 +26,22 @@ jest.mock('../../src/config/database', () => ({
 const REPORTED_ID = 'reported-uuid-1';
 const ADMIN_ID    = 'admin-uuid-1';
 
-const SAMPLE_GROUP = {
-  reported_id:         REPORTED_ID,
-  reported_username:   'usuario_denunciado',
-  total_reports:       3,
-  distinct_reporters:  3,
-  last_reported_at:    '2026-06-25T10:00:00.000Z',
-  reports: [
-    { id: 'rep-1', reporter_username: 'user1', reason: 'spam', reason_detail: null, reported_at: '2026-06-25T10:00:00.000Z' },
+const SAMPLE_RESPONSE = {
+  groups: [
+    {
+      reported_id:        REPORTED_ID,
+      reported_username:  'usuario_denunciado',
+      total_reports:      3,
+      distinct_reporters: 3,
+      last_reported_at:   '2026-06-25T10:00:00.000Z',
+      reports: [
+        { id: 'rep-1', reporter_username: 'user1', reason: 'spam', reason_detail: null, reported_at: '2026-06-25T10:00:00.000Z' },
+      ],
+    },
   ],
+  total: 1,
+  page:  1,
+  limit: 20,
 };
 
 function makeReq(overrides = {}) {
@@ -54,41 +61,30 @@ function makeNext() { return jest.fn(); }
 describe('reportsController.list', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    reportsRepository.listReportGroups.mockResolvedValue([SAMPLE_GROUP]);
-    reportsRepository.countReportGroups.mockResolvedValue(1);
+    friendsClient.getReports.mockResolvedValue(SAMPLE_RESPONSE);
   });
 
-  it('devuelve grupos, total, page y limit en la respuesta', async () => {
+  it('devuelve la respuesta de friendsClient tal cual', async () => {
     const res = makeRes();
     await reportsController.list(makeReq(), res, makeNext());
 
-    expect(res.json).toHaveBeenCalledWith({
-      groups: [SAMPLE_GROUP],
-      total:  1,
-      page:   1,
-      limit:  20,
-    });
+    expect(res.json).toHaveBeenCalledWith(SAMPLE_RESPONSE);
   });
 
-  it('llama a listReportGroups con page y limit parseados desde query string', async () => {
+  it('llama a friendsClient.getReports con page y limit parseados desde query string', async () => {
     await reportsController.list(makeReq({ query: { page: '2', limit: '10' } }), makeRes(), makeNext());
 
-    expect(reportsRepository.listReportGroups).toHaveBeenCalledWith({ page: 2, limit: 10 });
+    expect(friendsClient.getReports).toHaveBeenCalledWith({ page: 2, limit: 10 });
   });
 
   it('usa page=1 y limit=20 por defecto si no se pasan query params', async () => {
     await reportsController.list(makeReq({ query: {} }), makeRes(), makeNext());
 
-    expect(reportsRepository.listReportGroups).toHaveBeenCalledWith({ page: 1, limit: 20 });
+    expect(friendsClient.getReports).toHaveBeenCalledWith({ page: 1, limit: 20 });
   });
 
-  it('llama a countReportGroups para obtener el total de grupos', async () => {
-    await reportsController.list(makeReq(), makeRes(), makeNext());
-    expect(reportsRepository.countReportGroups).toHaveBeenCalled();
-  });
-
-  it('llama a next con el error si el repository falla', async () => {
-    reportsRepository.listReportGroups.mockRejectedValue(new Error('DB error'));
+  it('llama a next con el error si friendsClient falla', async () => {
+    friendsClient.getReports.mockRejectedValue(new Error('friends service error'));
     const next = makeNext();
     await reportsController.list(makeReq(), makeRes(), next);
     expect(next).toHaveBeenCalledWith(expect.any(Error));
@@ -100,13 +96,13 @@ describe('reportsController.list', () => {
 describe('reportsController.discard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    reportsRepository.markReportsStatus.mockResolvedValue();
+    friendsClient.markReportsDiscarded.mockResolvedValue({ message: 'Denuncias descartadas.' });
     usersClient.resolveUserReview.mockResolvedValue({ message: 'Revisión resuelta.' });
   });
 
-  it('llama a markReportsStatus con "discarded"', async () => {
+  it('llama a friendsClient.markReportsDiscarded con el reportedId', async () => {
     await reportsController.discard(makeReq(), makeRes(), makeNext());
-    expect(reportsRepository.markReportsStatus).toHaveBeenCalledWith(REPORTED_ID, 'discarded');
+    expect(friendsClient.markReportsDiscarded).toHaveBeenCalledWith(REPORTED_ID);
   });
 
   it('llama a usersClient.resolveUserReview para limpiar el under_review', async () => {
@@ -128,8 +124,8 @@ describe('reportsController.discard', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
   });
 
-  it('llama a next con el error si markReportsStatus falla', async () => {
-    reportsRepository.markReportsStatus.mockRejectedValue(new Error('DB error'));
+  it('llama a next con el error si friendsClient falla', async () => {
+    friendsClient.markReportsDiscarded.mockRejectedValue(new Error('friends service error'));
     const next = makeNext();
     await reportsController.discard(makeReq(), makeRes(), next);
     expect(next).toHaveBeenCalledWith(expect.any(Error));
@@ -152,7 +148,7 @@ describe('reportsController.suspend', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    reportsRepository.markReportsStatus.mockResolvedValue();
+    friendsClient.markReportsResolved.mockResolvedValue({ message: 'Caso resuelto.' });
     usersClient.suspendUser.mockResolvedValue({ message: 'Usuario suspendido' });
   });
 
@@ -174,9 +170,9 @@ describe('reportsController.suspend', () => {
     expect(usersClient.suspendUser).toHaveBeenCalledWith(REPORTED_ID);
   });
 
-  it('llama a markReportsStatus con "resolved"', async () => {
+  it('llama a friendsClient.markReportsResolved con el reportedId', async () => {
     await reportsController.suspend(makeReq({ body: { reason: REASON } }), makeRes(), makeNext());
-    expect(reportsRepository.markReportsStatus).toHaveBeenCalledWith(REPORTED_ID, 'resolved');
+    expect(friendsClient.markReportsResolved).toHaveBeenCalledWith(REPORTED_ID);
   });
 
   it('registra la acción "suspend_from_reports" con el motivo en moderation_actions', async () => {
@@ -200,9 +196,9 @@ describe('reportsController.suspend', () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }));
   });
 
-  it('llama a next con el error si markReportsStatus falla', async () => {
+  it('llama a next con el error si friendsClient falla', async () => {
     usersClient.suspendUser.mockResolvedValue({ message: 'ok' });
-    reportsRepository.markReportsStatus.mockRejectedValue(new Error('DB down'));
+    friendsClient.markReportsResolved.mockRejectedValue(new Error('friends service error'));
     const next = makeNext();
     await reportsController.suspend(makeReq({ body: { reason: REASON } }), makeRes(), next);
     expect(next).toHaveBeenCalledWith(expect.any(Error));
@@ -214,13 +210,13 @@ describe('reportsController.suspend', () => {
 describe('reportsController.resolve', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    reportsRepository.markReportsStatus.mockResolvedValue();
+    friendsClient.markReportsResolved.mockResolvedValue({ message: 'Caso resuelto.' });
     usersClient.resolveUserReview.mockResolvedValue({ message: 'Revisión resuelta.' });
   });
 
-  it('llama a markReportsStatus con "resolved"', async () => {
+  it('llama a friendsClient.markReportsResolved con el reportedId', async () => {
     await reportsController.resolve(makeReq(), makeRes(), makeNext());
-    expect(reportsRepository.markReportsStatus).toHaveBeenCalledWith(REPORTED_ID, 'resolved');
+    expect(friendsClient.markReportsResolved).toHaveBeenCalledWith(REPORTED_ID);
   });
 
   it('llama a usersClient.resolveUserReview para limpiar el under_review', async () => {
@@ -242,8 +238,8 @@ describe('reportsController.resolve', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
   });
 
-  it('llama a next con el error si markReportsStatus falla', async () => {
-    reportsRepository.markReportsStatus.mockRejectedValue(new Error('DB error'));
+  it('llama a next con el error si friendsClient falla', async () => {
+    friendsClient.markReportsResolved.mockRejectedValue(new Error('friends service error'));
     const next = makeNext();
     await reportsController.resolve(makeReq(), makeRes(), next);
     expect(next).toHaveBeenCalledWith(expect.any(Error));
