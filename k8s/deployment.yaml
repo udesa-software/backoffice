@@ -52,6 +52,11 @@ spec:
                 secretKeyRef:
                   name: backoffice-secret
                   key: ADMIN_JWT_SECRET
+            - name: INTERNAL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backoffice-secret
+                  key: INTERNAL_SECRET
             - name: SMTP_HOST
               valueFrom:
                 secretKeyRef:
