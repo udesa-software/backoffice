@@ -17,4 +17,7 @@ router.post('/:reportedId/suspend', reportsController.suspend);
 // H7 CA.3: resolver/cerrar caso
 router.post('/:reportedId/resolve', reportsController.resolve);
 
+// descartar denuncia individual por id (sin afectar el resto del caso ni el contador)
+router.post('/report/:reportId/discard', reportsController.discardReport);
+
 module.exports = router;

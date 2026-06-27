@@ -6,9 +6,10 @@ const { query } = require('../../src/config/database');
 
 jest.mock('../../src/clients/friendsClient', () => ({
   friendsClient: {
-    getReports:          jest.fn(),
+    getReports:           jest.fn(),
     markReportsDiscarded: jest.fn(),
     markReportsResolved:  jest.fn(),
+    discardReport:        jest.fn(),
   },
 }));
 
@@ -24,6 +25,7 @@ jest.mock('../../src/config/database', () => ({
 }));
 
 const REPORTED_ID = 'reported-uuid-1';
+const REPORT_ID   = 'report-uuid-1';
 const ADMIN_ID    = 'admin-uuid-1';
 
 const SAMPLE_RESPONSE = {
@@ -47,7 +49,7 @@ const SAMPLE_RESPONSE = {
 function makeReq(overrides = {}) {
   return {
     admin:  { sub: ADMIN_ID },
-    params: { reportedId: REPORTED_ID },
+    params: { reportedId: REPORTED_ID, reportId: REPORT_ID },
     body:   {},
     query:  {},
     ...overrides,
@@ -252,5 +254,45 @@ describe('reportsController.resolve', () => {
     await reportsController.resolve(makeReq(), res, next);
     expect(next).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
+  });
+});
+
+// ─── discardReport ────────────────────────────────────────────────────────────
+
+describe('reportsController.discardReport', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    friendsClient.discardReport.mockResolvedValue({ message: 'Denuncia descartada.' });
+  });
+
+  it('llama a friendsClient.discardReport con el reportId', async () => {
+    await reportsController.discardReport(makeReq(), makeRes(), makeNext());
+    expect(friendsClient.discardReport).toHaveBeenCalledWith(REPORT_ID);
+  });
+
+  it('registra la acción "discard_report" en moderation_actions', async () => {
+    await reportsController.discardReport(makeReq(), makeRes(), makeNext());
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('discard_report'),
+      [ADMIN_ID, REPORT_ID]
+    );
+  });
+
+  it('no llama a usersClient.resolveUserReview', async () => {
+    await reportsController.discardReport(makeReq(), makeRes(), makeNext());
+    expect(usersClient.resolveUserReview).not.toHaveBeenCalled();
+  });
+
+  it('devuelve un mensaje de confirmación', async () => {
+    const res = makeRes();
+    await reportsController.discardReport(makeReq(), res, makeNext());
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
+  });
+
+  it('llama a next con el error si friendsClient falla', async () => {
+    friendsClient.discardReport.mockRejectedValue(new Error('friends service error'));
+    const next = makeNext();
+    await reportsController.discardReport(makeReq(), makeRes(), next);
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 });
