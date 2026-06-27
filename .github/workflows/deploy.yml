@@ -60,4 +60,4 @@ jobs:
       - name: Restart deployment
         run: |
           kubectl rollout restart deployment/backoffice -n tds-group-3
-          kubectl rollout status deployment/backoffice -n tds-group-3 --timeout=180s
+          kubectl rollout status deployment/backoffice -n tds-group-3 --timeout=600s
