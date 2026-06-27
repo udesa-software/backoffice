@@ -3,6 +3,8 @@ module.exports = {
   collectCoverageFrom: [
     'src/modules/auth/auth.service.js',
     'src/modules/admins/admin.service.js',
+    'src/modules/reports/reports.controller.js',
+    'src/modules/reports/reports.repository.js',
   ],
   coverageThreshold: {
     global: {

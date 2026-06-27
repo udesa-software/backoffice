@@ -8,11 +8,21 @@ require('../setupEnv');
 
 jest.mock('../../src/clients/usersClient', () => ({
   usersClient: {
-    listUsers:   jest.fn(),
-    getUser:     jest.fn(),
-    suspendUser: jest.fn(),
-    unsuspendUser: jest.fn(),
-    getMetrics:  jest.fn(),
+    listUsers:         jest.fn(),
+    getUser:           jest.fn(),
+    suspendUser:       jest.fn(),
+    unsuspendUser:     jest.fn(),
+    getMetrics:        jest.fn(),
+    resolveUserReview: jest.fn(), // H7
+  },
+}));
+
+// H7: las denuncias viven en friends (fuente de verdad); backoffice las consulta via friendsClient
+jest.mock('../../src/clients/friendsClient', () => ({
+  friendsClient: {
+    getReports:           jest.fn(),
+    markReportsDiscarded: jest.fn(),
+    markReportsResolved:  jest.fn(),
   },
 }));
 
@@ -33,7 +43,8 @@ const request = require('supertest');
 
 const app        = require('../../src/app');
 const { pool }   = require('../../src/config/database');
-const { usersClient } = require('../../src/clients/usersClient');
+const { usersClient }  = require('../../src/clients/usersClient');
+const { friendsClient } = require('../../src/clients/friendsClient');
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -155,6 +166,12 @@ beforeEach(async () => {
     suspended_users: '2', deleted_users: '1', online_now: '5',
     weekly_registrations: [],
   });
+  usersClient.resolveUserReview.mockResolvedValue({ message: 'Revisión resuelta.' }); // H7
+
+  // H7: defaults del cliente de friends (las denuncias viven allí)
+  friendsClient.getReports.mockResolvedValue({ groups: [], total: 0, page: 1, limit: 20 });
+  friendsClient.markReportsDiscarded.mockResolvedValue({ message: 'Denuncias descartadas.' });
+  friendsClient.markReportsResolved.mockResolvedValue({ message: 'Caso resuelto.' });
 });
 
 afterAll(async () => {
@@ -825,5 +842,212 @@ describe('GET /api/admin/services/health', () => {
       .set(bearer(token));
 
     expect(res.status).toBe(403);
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// H7 – GESTIÓN DE DENUNCIAS
+// Las denuncias viven en el friends service (fuente de verdad). El backoffice
+// las consulta y gestiona via friendsClient (mockeado aquí como servicio externo).
+// ═════════════════════════════════════════════════════════════════════════════
+
+const REPORTED_USER_ID = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+
+const SAMPLE_GROUP = {
+  reported_id:        REPORTED_USER_ID,
+  reported_username:  'usuario_denunciado',
+  total_reports:      2,
+  distinct_reporters: 2,
+  last_reported_at:   new Date().toISOString(),
+  reports: [
+    { id: 'rep-1', reporter_username: 'denunciante', reason: 'spam',       reason_detail: null,                  reported_at: new Date().toISOString() },
+    { id: 'rep-2', reporter_username: 'otro',        reason: 'harassment', reason_detail: null,                  reported_at: new Date().toISOString() },
+  ],
+};
+
+// ── GET /api/admin/reports ────────────────────────────────────────────────────
+
+describe('GET /api/admin/reports', () => {
+  it('200: devuelve lista vacía cuando friendsClient no retorna grupos', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+    // default del beforeEach: getReports retorna { groups: [], total: 0, page: 1, limit: 20 }
+
+    const res = await request(app)
+      .get('/api/admin/reports')
+      .set(bearer(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.groups).toEqual([]);
+    expect(res.body.total).toBe(0);
+    expect(res.body.page).toBe(1);
+    expect(res.body.limit).toBe(20);
+  });
+
+  it('200: devuelve los grupos tal como los retorna friendsClient', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+    friendsClient.getReports.mockResolvedValue({ groups: [SAMPLE_GROUP], total: 1, page: 1, limit: 20 });
+
+    const res = await request(app)
+      .get('/api/admin/reports')
+      .set(bearer(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.groups).toHaveLength(1);
+    expect(res.body.groups[0].reported_id).toBe(REPORTED_USER_ID);
+    expect(res.body.groups[0].total_reports).toBe(2);
+    expect(res.body.groups[0].distinct_reporters).toBe(2);
+    expect(res.body.groups[0].reports).toHaveLength(2);
+  });
+
+  it('200: propaga page y limit a friendsClient.getReports', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+
+    await request(app)
+      .get('/api/admin/reports?page=2&limit=10')
+      .set(bearer(token));
+
+    expect(friendsClient.getReports).toHaveBeenCalledWith({ page: 2, limit: 10 });
+  });
+
+  it('401: sin access token', async () => {
+    const res = await request(app).get('/api/admin/reports');
+    expect(res.status).toBe(401);
+  });
+
+  it('403: admin con contraseña temporal no puede ver la lista', async () => {
+    await insertAdmin({ ...SUPERADMIN, mustChangePassword: true });
+    const token = makeAdminToken(SUPERADMIN, { mustChangePassword: true });
+
+    const res = await request(app)
+      .get('/api/admin/reports')
+      .set(bearer(token));
+
+    expect(res.status).toBe(403);
+  });
+});
+
+// ── POST /api/admin/reports/:reportedId/discard ───────────────────────────────
+
+describe('POST /api/admin/reports/:reportedId/discard', () => {
+  it('200: llama a friendsClient.markReportsDiscarded y a usersClient.resolveUserReview', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+
+    const res = await request(app)
+      .post(`/api/admin/reports/${REPORTED_USER_ID}/discard`)
+      .set(bearer(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBeDefined();
+    expect(friendsClient.markReportsDiscarded).toHaveBeenCalledWith(REPORTED_USER_ID);
+    expect(usersClient.resolveUserReview).toHaveBeenCalledWith(REPORTED_USER_ID);
+  });
+
+  it('200: registra la acción "discard_reports" en moderation_actions', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+
+    await request(app)
+      .post(`/api/admin/reports/${REPORTED_USER_ID}/discard`)
+      .set(bearer(token));
+
+    const { rows } = await pool.query(
+      'SELECT action FROM moderation_actions WHERE target_user_id = $1',
+      [REPORTED_USER_ID]
+    );
+    expect(rows[0].action).toBe('discard_reports');
+  });
+
+  it('401: sin access token', async () => {
+    const res = await request(app).post(`/api/admin/reports/${REPORTED_USER_ID}/discard`);
+    expect(res.status).toBe(401);
+  });
+});
+
+// ── POST /api/admin/reports/:reportedId/suspend ───────────────────────────────
+
+describe('POST /api/admin/reports/:reportedId/suspend', () => {
+  it('200: suspende al usuario, marca reportes como resueltos y registra la acción', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+
+    const res = await request(app)
+      .post(`/api/admin/reports/${REPORTED_USER_ID}/suspend`)
+      .set(bearer(token))
+      .send({ reason: 'Acoso reiterado a múltiples usuarios' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBeDefined();
+    expect(usersClient.suspendUser).toHaveBeenCalledWith(REPORTED_USER_ID);
+    expect(friendsClient.markReportsResolved).toHaveBeenCalledWith(REPORTED_USER_ID);
+
+    const { rows } = await pool.query(
+      'SELECT action, reason FROM moderation_actions WHERE target_user_id = $1',
+      [REPORTED_USER_ID]
+    );
+    expect(rows[0].action).toBe('suspend_from_reports');
+    expect(rows[0].reason).toBe('Acoso reiterado a múltiples usuarios');
+  });
+
+  it('400: devuelve error si no se envía motivo', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+
+    const res = await request(app)
+      .post(`/api/admin/reports/${REPORTED_USER_ID}/suspend`)
+      .set(bearer(token))
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(usersClient.suspendUser).not.toHaveBeenCalled();
+    expect(friendsClient.markReportsResolved).not.toHaveBeenCalled();
+  });
+
+  it('401: sin access token', async () => {
+    const res = await request(app)
+      .post(`/api/admin/reports/${REPORTED_USER_ID}/suspend`)
+      .send({ reason: 'motivo' });
+    expect(res.status).toBe(401);
+  });
+});
+
+// ── POST /api/admin/reports/:reportedId/resolve ───────────────────────────────
+
+describe('POST /api/admin/reports/:reportedId/resolve', () => {
+  it('200: llama a friendsClient.markReportsResolved y a usersClient.resolveUserReview', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+
+    const res = await request(app)
+      .post(`/api/admin/reports/${REPORTED_USER_ID}/resolve`)
+      .set(bearer(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBeDefined();
+    expect(friendsClient.markReportsResolved).toHaveBeenCalledWith(REPORTED_USER_ID);
+    expect(usersClient.resolveUserReview).toHaveBeenCalledWith(REPORTED_USER_ID);
+  });
+
+  it('200: registra la acción "resolve_reports" en moderation_actions', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+
+    await request(app)
+      .post(`/api/admin/reports/${REPORTED_USER_ID}/resolve`)
+      .set(bearer(token));
+
+    const { rows } = await pool.query(
+      'SELECT action FROM moderation_actions WHERE target_user_id = $1',
+      [REPORTED_USER_ID]
+    );
+    expect(rows[0].action).toBe('resolve_reports');
+  });
+
+  it('401: sin access token', async () => {
+    const res = await request(app).post(`/api/admin/reports/${REPORTED_USER_ID}/resolve`);
+    expect(res.status).toBe(401);
   });
 });

@@ -23,8 +23,8 @@ const envSchema = z.object({
   // y para autenticar las llamadas salientes de backoffice hacia users.
   INTERNAL_SECRET: z.string().optional(),
 
-  // URLs de otros servicios para healthcheck (H11)
-  FRIENDS_SERVICE_URL: z.string().url().optional(),
+  // URL del microservicio de friends (H7: consulta y gestión de denuncias)
+  FRIENDS_SERVICE_URL: z.string().url(),
   LOCATION_SERVICE_URL: z.string().url().optional(),
   API_GATEWAY_URL: z.string().url().optional(),
   BACKOFFICE_SERVICE_URL: z.string().url().optional(),
