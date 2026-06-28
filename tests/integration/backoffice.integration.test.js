@@ -23,6 +23,7 @@ jest.mock('../../src/clients/friendsClient', () => ({
     getReports:           jest.fn(),
     markReportsDiscarded: jest.fn(),
     markReportsResolved:  jest.fn(),
+    discardReport:        jest.fn(),
   },
 }));
 
@@ -172,6 +173,7 @@ beforeEach(async () => {
   friendsClient.getReports.mockResolvedValue({ groups: [], total: 0, page: 1, limit: 20 });
   friendsClient.markReportsDiscarded.mockResolvedValue({ message: 'Denuncias descartadas.' });
   friendsClient.markReportsResolved.mockResolvedValue({ message: 'Caso resuelto.' });
+  friendsClient.discardReport.mockResolvedValue({ message: 'Denuncia descartada.' });
 });
 
 afterAll(async () => {
@@ -1048,6 +1050,43 @@ describe('POST /api/admin/reports/:reportedId/resolve', () => {
 
   it('401: sin access token', async () => {
     const res = await request(app).post(`/api/admin/reports/${REPORTED_USER_ID}/resolve`);
+    expect(res.status).toBe(401);
+  });
+});
+
+// ── POST /api/admin/reports/report/:reportId/discard ─────────────────────────
+
+describe('POST /api/admin/reports/report/:reportId/discard', () => {
+  const REPORT_ID = 'rep-1';
+
+  it('200: llama a friendsClient.discardReport con el reportId', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+    friendsClient.discardReport.mockResolvedValue({ message: 'Denuncia descartada.' });
+
+    const res = await request(app)
+      .post(`/api/admin/reports/report/${REPORT_ID}/discard`)
+      .set(bearer(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBeDefined();
+    expect(friendsClient.discardReport).toHaveBeenCalledWith(REPORT_ID);
+  });
+
+  it('200: no llama a usersClient.resolveUserReview', async () => {
+    await insertAdmin(SUPERADMIN);
+    const token = makeAdminToken(SUPERADMIN);
+    friendsClient.discardReport.mockResolvedValue({ message: 'Denuncia descartada.' });
+
+    await request(app)
+      .post(`/api/admin/reports/report/${REPORT_ID}/discard`)
+      .set(bearer(token));
+
+    expect(usersClient.resolveUserReview).not.toHaveBeenCalled();
+  });
+
+  it('401: sin access token', async () => {
+    const res = await request(app).post(`/api/admin/reports/report/${REPORT_ID}/discard`);
     expect(res.status).toBe(401);
   });
 });

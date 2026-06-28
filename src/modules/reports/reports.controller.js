@@ -67,6 +67,16 @@ const reportsController = {
     }
   },
 
+  async discardReport(req, res, next) {
+    try {
+      const { reportId } = req.params;
+      await friendsClient.discardReport(reportId);
+      res.json({ message: 'Denuncia descartada.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // H7 CA.3: resolver/cerrar caso sin suspender
   async resolve(req, res, next) {
     try {

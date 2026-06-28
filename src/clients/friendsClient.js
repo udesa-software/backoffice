@@ -52,6 +52,11 @@ const friendsClient = {
   markReportsResolved(reportedId) {
     return internalRequest('POST', `/internal/reports/${reportedId}/resolve`);
   },
+
+  // descarta una denuncia individual por su id (sin afectar el resto del caso)
+  discardReport(reportId) {
+    return internalRequest('POST', `/internal/reports/report/${reportId}/discard`);
+  },
 };
 
 module.exports = { friendsClient };
